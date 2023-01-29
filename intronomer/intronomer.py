@@ -532,6 +532,7 @@ if __name__ == '__main__':
     now = datetime.now().strftime('%m-%d-%Y_%H.%M.%S')
     if output_dir is None:
         output_dir = os.path.dirname(bam_path)
+    os.makedirs(output_dir, exist_ok=True)
     if read_tx_file is None:
         intron_info = extract_introns(gtf_path)
         read_tx_df = longreads_to_isoforms(
