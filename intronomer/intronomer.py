@@ -12,6 +12,8 @@ intron-persistence/intronomer/intronomer.py
     -g <annotation file>
     -a <aligned-reads file>
     -p <project flag>
+    -o <output directory>
+    -t <read-transcript preprocess file>
 
 <aligned-reads file> (.bam or .sam format)
     - output of long RNA-seq reads mapped to a reference with a splice-aware
@@ -25,6 +27,12 @@ intron-persistence/intronomer/intronomer.py
       defined with respect to this annotation.
 <project flag> (optional)
     - a flag or project name to add to output filenames
+<output directory> (optional)
+    - desired output directory; if not given, the alignment file directory
+      will be used to write new files
+<read-transcript preprocess file> (optional)
+    - if the RI_txs_to_read_ids file was previously generated (first step in
+      the calculation) you can add it here to avoid re-generating this.
 """
 import argparse
 from collections import defaultdict
@@ -91,10 +99,10 @@ def hamming_similarity(df_row, df):
 
 def assign_RI_metrics(read_tx_df, output_dir, now, batch_num, flag=''):
     read_tx_df = read_tx_df.loc[read_tx_df['RI-read_ratio'] > 0].copy()
-    all_intron_dict = {
-        'intron': [], 'transcript': [], 'persistence': [], 'position': [],
-        'chrom': []
-    }
+    all_intron_columns = [
+        'intron', 'transcript', 'persistence', 'position', 'chrom'
+    ]
+    all_intron_rows = []
     for tx in read_tx_df['transcript'].unique():
         sub_df = read_tx_df.loc[read_tx_df['transcript'] == tx].copy()
         chrom = sub_df['chrom'].unique()[0]
@@ -127,14 +135,12 @@ def assign_RI_metrics(read_tx_df, output_dir, now, batch_num, flag=''):
                     axis=1
                 )
                 persistence = info_perc * int_df['IR_persistence'].sum() / n_x
+            all_intron_rows.append((
+                f'{chrom}:{intron}', tx, persistence, int_count / num_introns,
+                chrom
+            ))
 
-            all_intron_dict['intron'].append('{}:{}'.format(chrom, intron))
-            all_intron_dict['chrom'] = chrom
-            all_intron_dict['transcript'].append(tx)
-            all_intron_dict['persistence'].append(persistence)
-            all_intron_dict['position'].append(int_count / num_introns)
-
-    tx_df = pd.DataFrame(all_intron_dict)
+    tx_df = pd.DataFrame(columns=all_intron_columns, data=all_intron_rows)
     print_df = tx_df[['intron', 'transcript', 'persistence', 'position']]
     out_name = f'intron-persistence_{now}.csv'
     if flag:
@@ -143,7 +149,7 @@ def assign_RI_metrics(read_tx_df, output_dir, now, batch_num, flag=''):
     if batch_num is not None:
         if batch_num > 0:
             print_header = False
-        out_name = 'batch{}_'.format(batch_num) + out_name
+        out_name = f'batch{batch_num}_' + out_name
     outfile = os.path.join(output_dir, out_name)
     print_df.to_csv(outfile, index=False, sep=',', header=print_header)
     return
@@ -254,7 +260,7 @@ def check_match_type(read_introns, read_left, read_right, tx_introns):
     return splice_type + read_length, target_introns, missing_introns
 
 
-def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
+def longreads_to_isoforms(bam_file, intron_info, output_dir, now, flag):
     tx_ranges, intron_to_txs, tx_to_introns, tx_to_gene = intron_info
     if bam_file.endswith('bam'):
         # print('bamfile')
@@ -311,7 +317,7 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         intron_set = set(introns)
         r_intron_str = ''
         for (left, right) in sorted(list(intron_set)):
-            r_intron_str += '{}-{};'.format(left, right)
+            r_intron_str += f'{left}-{right};'
         shortlist_txs = set()
         exact_txs = set()
         for tx in possible_txs:
@@ -381,7 +387,7 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         columns=read_info_cols, data=read_info_rows
     )
     # outfile = os.path.join(
-    #     output_dir, 'read_info_nosequence_{}.tsv'.format(now)
+    #     output_dir, f'read_info_nosequence_{flag}_{now}.tsv'
     # )
     # with open(outfile, 'w') as output:
     #     read_info_df.to_csv(output, sep='\t', index=False)
@@ -390,7 +396,7 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         columns=tx_info_cols, data=tx_info_rows
     )
     # outfile = os.path.join(
-    #     output_dir, 'tx_info_{}.tsv'.format(now)
+    #     output_dir, f'tx_info_{flag}_{now}.tsv'
     # )
     # with open(outfile, 'w') as output:
     #     tx_info_df.to_csv(output, sep='\t', index=False)
@@ -399,7 +405,7 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         target_intron_set = set(tx_to_introns[tx])
         t_intron_str = ''
         for (left, right) in sorted(list(target_intron_set)):
-            t_intron_str += '{}-{};'.format(left, right)
+            t_intron_str += f'{left}-{right};'
         tx_info_rows.append((
             tx, tx_ranges[tx][1] - tx_ranges[tx][0], tx_ranges[tx][0],
             tx_ranges[tx][1], t_intron_str
@@ -408,7 +414,7 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         columns=tx_to_read_id_cols, data=tx_to_read_id_rows
     )
     # outfile = os.path.join(
-    #     output_dir, 'tx_to_read_id_{}.tsv'.format(now)
+    #     output_dir, f'tx_to_read_id_{flag}_{now}.tsv'
     # )
     # tx_to_read_id_df['gene_id'] = tx_to_read_id_df['transcript'].apply(
     #     lambda x: tx_to_gene.get(x, '')
@@ -454,14 +460,14 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now):
         tx_to_read_id_df['transcript'].isin(RI_tx_set)
     ]
     tx_to_read_id_df['RI-read_ratio'] = tx_to_read_id_df['transcript'].apply(
-        lambda x: '{:.2f}'.format(ratios_dict[x])
+        lambda x: f'{ratios_dict[x]:.2f}'
     )
     tx_to_read_id_df.sort_values(
         by=['match_type', 'transcript', 'RI-read_ratio'],
         ascending=[False, True, False], inplace=True
     )
     outfile = os.path.join(
-        output_dir, 'RI_txs_to_read_ids{}.tsv'.format(now)
+        output_dir, f'RI_txs_to_read_ids_{flag}_{now}.tsv'
     )
     with open(outfile, 'w') as output:
         tx_to_read_id_df.to_csv(output, sep='\t', index=False)
@@ -502,6 +508,17 @@ if __name__ == '__main__':
         help='If desired, add a project name or other flag that you would '
              'like to have included in the output filenames.'
     )
+    parser.add_argument(
+        '--transcript-read-file', '-t',
+        help='If the "RI_txs_to_read_ids" file has already been generated, '
+             'skip re-generation by passing it here.'
+    )
+    parser.add_argument(
+        '--output-directory', '-o',
+        help='Add the desired directory in which to write output files. If '
+             'none is provided, files will be written in the same directory '
+             'as the input alignment file.'
+    )
 
     args = parser.parse_args()
     bam_path = args.aligned_long_reads
@@ -509,14 +526,19 @@ if __name__ == '__main__':
     batch_num = args.batch_number
     tot_batches = args.total_batches
     project_flag = args.project_flag
+    read_tx_file = args.transcript_read_file
+    output_dir = args.output_directory
 
     now = datetime.now().strftime('%m-%d-%Y_%H.%M.%S')
-    output_dir = os.path.dirname(bam_path)
-
-    intron_info = extract_introns(gtf_path)
-    read_tx_df = longreads_to_isoforms(
-        bam_path, intron_info, output_dir, now
-    )
+    if output_dir is None:
+        output_dir = os.path.dirname(bam_path)
+    if read_tx_file is None:
+        intron_info = extract_introns(gtf_path)
+        read_tx_df = longreads_to_isoforms(
+            bam_path, intron_info, output_dir, now, project_flag
+        )
+    else:
+        read_tx_df = pd.read_csv(read_tx_file, sep='\t')
     if batch_num is not None:
         all_txs = read_tx_df['transcript'].unique().tolist()
         all_txs.sort()
@@ -527,14 +549,12 @@ if __name__ == '__main__':
         ]
         target_txs = tx_lists[batch_num]
         print(
-            'Batch {}: {} total transcripts, {} in current batch'.format(
-                batch_num, len(all_txs), len(target_txs)
-            )
+            f'Batch {batch_num}: {len(all_txs)} total transcripts, '
+            f'{len(target_txs)} in current batch'
         )
         read_tx_df = read_tx_df.loc[read_tx_df['transcript'].isin(target_txs)]
         print(
-            'total length of df: {}, {} txs'.format(
-                len(read_tx_df), read_tx_df['transcript'].nunique()
-            )
+            f"total length of df: {len(read_tx_df)}, "
+            f"{read_tx_df['transcript'].nunique()} txs"
         )
     assign_RI_metrics(read_tx_df, output_dir, now, batch_num, project_flag)
