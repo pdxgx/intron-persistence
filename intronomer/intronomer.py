@@ -98,6 +98,7 @@ def hamming_similarity(df_row, df):
 
 
 def assign_RI_metrics(read_tx_df, output_dir, now, batch_num, flag=''):
+    read_tx_df['RI-read_ratio'] = pd.to_numeric(read_tx_df['RI-read_ratio'])
     read_tx_df = read_tx_df.loc[read_tx_df['RI-read_ratio'] > 0].copy()
     all_intron_columns = [
         'intron', 'transcript', 'persistence', 'position', 'chrom'
