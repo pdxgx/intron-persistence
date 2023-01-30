@@ -8,7 +8,7 @@ Step 1 assigns aligned pacbio reads to annotated transcripts
 Step 2 calculates intron persistence values from read-transcript sets
 
 SAMPLE RUN:
-intron-persistence/intronomer/intronomer.py
+python intronomer/intronomer/intronomer.py
     -g <annotation file>
     -a <aligned-reads file>
     -p <project flag>
@@ -393,24 +393,6 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now, flag):
     # with open(outfile, 'w') as output:
     #     read_info_df.to_csv(output, sep='\t', index=False)
 
-    tx_info_df = pd.DataFrame(
-        columns=tx_info_cols, data=tx_info_rows
-    )
-    # outfile = os.path.join(
-    #     output_dir, f'tx_info_{flag}_{now}.tsv'
-    # )
-    # with open(outfile, 'w') as output:
-    #     tx_info_df.to_csv(output, sep='\t', index=False)
-
-    for tx in tx_info_df['transcript'].unique():
-        target_intron_set = set(tx_to_introns[tx])
-        t_intron_str = ''
-        for (left, right) in sorted(list(target_intron_set)):
-            t_intron_str += f'{left}-{right};'
-        tx_info_rows.append((
-            tx, tx_ranges[tx][1] - tx_ranges[tx][0], tx_ranges[tx][0],
-            tx_ranges[tx][1], t_intron_str
-        ))
     tx_to_read_id_df = pd.DataFrame(
         columns=tx_to_read_id_cols, data=tx_to_read_id_rows
     )
@@ -423,6 +405,24 @@ def longreads_to_isoforms(bam_file, intron_info, output_dir, now, flag):
     # with open(outfile, 'w') as output:
     #     tx_to_read_id_df.to_csv(output, sep='\t', index=False)
 
+    for tx in tx_to_read_id_df['transcript'].unique():
+        target_intron_set = set(tx_to_introns[tx])
+        t_intron_str = ''
+        for (left, right) in sorted(list(target_intron_set)):
+            t_intron_str += f'{left}-{right};'
+        tx_info_rows.append((
+            tx, tx_ranges[tx][1] - tx_ranges[tx][0], tx_ranges[tx][0],
+            tx_ranges[tx][1], t_intron_str
+        ))
+    tx_info_df = pd.DataFrame(
+        columns=tx_info_cols, data=tx_info_rows
+    )
+    # outfile = os.path.join(
+    #     output_dir, f'tx_info_{flag}_{now}.tsv'
+    # )
+    # with open(outfile, 'w') as output:
+    #     tx_info_df.to_csv(output, sep='\t', index=False)
+    
     # tx_groups = tx_to_read_id_df.groupby('transcript').count()
     # tx_groups['reads_per_transcript'] = tx_groups['read_id']
     # tx_groups.reset_index(inplace=True)
