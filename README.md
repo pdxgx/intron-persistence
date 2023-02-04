@@ -36,3 +36,67 @@ python intronomer/intronomer/intronomer.py -g ANNOTATION_FILE -a ALIGNED_READS_F
 - `PREPROCESSED_READ-TX_FILE`
     - if the "RI_txs_to_read_ids" file was previously generated (first step in the calculation) you can add it here to avoid re-generating this.
 
+### Example
+
+This runnable example demonstrates how to use `intronomer` and describes its outputs. 
+
+#### Example files
+
+Files for the runnable example have been provided in the `./exe/` directory, and these include:
+
+* `exe.bam/exe.bam.bai` : Small subset of 1000 mapped long reads from the human stem cell sample SRP098984/SAMN07611993.
+* `gencode.v35.annotation.subset.gtf` : Small sample annotation from GENCODE v35 (chr###).
+
+#### Compute persistence
+
+Process the example data with `intronomer` using:
+
+```
+python ./src/intronomer.py -g './exe/gencode.v35.annotation.exe.gtf' -a './exe/exe.bam' -o 'example' -p 'new-example'
+```
+
+This generates a new directory, `./example/`, and returns a message summarizing our results:
+
+```
+7 transcripts with at least 5 reads and some persistent RIs
+```
+
+Inspecting the contents of `./example/` shows us two new table files were written, a .tsv called `RI_txs_to_read_ids_new-example_02-04-2023_14.26.08.tsv` containing read-transcript mapping info, and a .csv called `new-example_intron-persistence_02-04-2023_14.26.08.csv` containing persistences computed by intron (details below). Note how our
+project flag "new-example" was applied to each new file.
+
+#### Output file descriptions
+
+##### Persistence table
+
+The .csv table called `"intron-persistence_*"` contains the computed persistences organized by intron feature details, including genome coordinates. The column names in this .csv are:
+
+1. `intron` : The intron's uniquely defining name, or in other words its genome coordinates.
+2. `transcript` : Transcript ID of transcript containing the intron, denoted as en Ensembl ID with ENST*.
+3. `persistence` : Computed persistence of the intron.
+4. `position` : Relative transcript position. This is the decimal unit value (e.g. 0-1) of the intron's start location in relation to the transcript starting coordinate.
+
+##### Read-transcript mappings table
+
+The .tsv file called `"RI_txs_to_read_ids*"` contains mappings of reads from the .bam file to transcripts in the .gtf annotation file. The column names of the .tsv file are:
+
+1. `transcript` : Transcript ID of transcript containing the intron, denoted as en Ensembl ID with ENST*.
+2. `read_id` : Numeric index of the line for the read in the provided .bam file.
+3. `match_type` : Flag denoting status of the read-transcript mapping. Can be either of:
+    * `skipped_splicing-partial`
+    * `skipped_splicing-full_length`
+    * `all_introns-partial`
+    * `all_introns-full_length`
+4. `region_tx_intron_count` : Total introns in the transcript, from the provided .gtf.
+5. `unspliced_intron_count` : Total unspliced introns detected in the transcript.
+6. `orig_read_id` : The full-length read ID in the .bam file.
+7. `read_length` : Length of the read, in bases.
+8. `read_left` : Upstream genome coordinate position of the read.
+9. `read_right` : Downstream genome coordinate position of the read.
+10. `chrom` : Chromosome for the read and transcript.
+11. `strand` : Strand for the read and transcript, either "-" for minus strand or "+" for positive strand.
+12. `read_introns` : Full list of the corrdinates of introns fully spanned by the read, separated by semicolons (";").
+13. `tx_length` : Transcript length in bases.
+14. `tx_left` : Upstream genome coordinate position of the transcript.
+15. `tx_right` : Downstream genome coordinate position of the transcript.
+16. `tx_introns` : Full list of coordinates for introns covered by the transcript, separated by semicolors (";").
+17. `RI-read_ratio`  : Fraction of the total transcript covered by the read.
