@@ -36,7 +36,43 @@ python intronomer/intronomer/intronomer.py -g ANNOTATION_FILE -a ALIGNED_READS_F
 - `PREPROCESSED_READ-TX_FILE`
     - if the "RI_txs_to_read_ids" file was previously generated (first step in the calculation) you can add it here to avoid re-generating this.
 
-### Example
+### Setup
+
+#### Virtual environment
+
+You may run `intronomer` by setting up a virtual environment with the provided .yml file. With conda, make the new environment with:
+
+```
+conda env create -f ./yml/intronomer.yml
+```
+
+#### Containerization
+
+You may run `intronomer` from a container with the supported Docker image. The Dockerfile is provided in the repo, or you may 
+choose to grab the image from Dockerhub. 
+
+To set up the containiner for the first time, navigate to the `intronomer` repo and run the following:
+
+```
+docker build -t intronomer:latest .
+```
+
+We specified the new image name `intronomer:latest` using the tag `-t`. See `docker run --help` for details.
+
+Now, running `docker images` should show something like the following:
+
+```
+REPOSITORY              TAG       IMAGE ID       CREATED         SIZE  
+intronomer              latest    22b7effb653e   6 minutes ago   580MB
+```
+
+Now, instead of navigating to a virtual environment or another directory, `intronomer` can be run from your current directory using:
+
+```
+docker run -w $PWD -v $PWD:$PWD intronomer:latest -g ANNOTATION_FILE -a ALIGNED_READS_FILE -p PROJECT_FLAG -o OUTPUT_DIRECTORY -t PREPROCESSED_READ-TX_FILE
+```
+
+### Runnable example
 
 This runnable example demonstrates how to use `intronomer` and describes its outputs. 
 
@@ -55,14 +91,21 @@ Process the example data with `intronomer` using:
 python ./src/intronomer.py -g './exe/gencode.v35.annotation.exe.gtf' -a './exe/exe.bam' -o 'example' -p 'new-example'
 ```
 
-This generates a new directory, `./example/`, and returns a message summarizing our results:
+If you already set up the Docker image (see above), you can instead navigate to the `/exe/` directory and use following (note, `sudo` may be required):
+
+```
+docker run -w $PWD -v $PWD:$PWD --rm intronomer:latest -g 'gencode.v35.annotation.exe.gtf' -a 'exe.bam' -o 'example' -p 'new-example' -rm
+```
+
+We used the flags `-w` to specify the container working directory, `-v` to mount the local path so that it is visible to the container, and `--rm` to remove the container on exit, which is good practice. See `docker run --help` for details.
+
+On run success, you should see a message summarizing the results:
 
 ```
 7 transcripts with at least 5 reads and some persistent RIs
 ```
 
-Inspecting the contents of `./example/` shows us two new table files were written, a .tsv called `RI_txs_to_read_ids_new-example_02-04-2023_14.26.08.tsv` containing read-transcript mapping info, and a .csv called `new-example_intron-persistence_02-04-2023_14.26.08.csv` containing persistences computed by intron (details below). Note how our
-project flag "new-example" was applied to each new file.
+There should also be a new folder called `./example/` containing two results tables, a .tsv called something like `RI_txs_to_read_ids_new-example_.tsv` which contains read-transcript mapping info, and a .csv called something like `new-example_intron-persistence_02-04-2023_14.26.08.csv` containing persistences computed by intron (details below). The datetimes in the new table filenames will vary. Also, note how our project flag was included in each table's filename.
 
 #### Output file descriptions
 
