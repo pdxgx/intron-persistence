@@ -55,16 +55,16 @@ the `intronomer` folder and run the following:
 docker build -t intronomer:latest .
 ```
 
-We specified the new image name `intronomer:latest` using the tag `-t`. See `docker run --help` for details.
+This command specified the new image name `intronomer:latest` using the tag `-t`. See `docker run --help` for details.
 
-Now, running `docker images` should show something like the following:
+Running `docker images` should show something like the following:
 
 ```
 REPOSITORY              TAG       IMAGE ID       CREATED         SIZE  
 intronomer              latest    22b7effb653e   6 minutes ago   580MB
 ```
 
-Now, instead of navigating to a virtual environment or another directory, `intronomer` can be run from your current directory using:
+Instead of activating a virtual environment or navigating to a new location, `intronomer` can be run from your current directory instead using:
 
 ```
 docker run -w $PWD -v $PWD:$PWD intronomer:latest -g ANNOTATION_FILE -a ALIGNED_READS_FILE -p PROJECT_FLAG -o OUTPUT_DIRECTORY -t PREPROCESSED_READ-TX_FILE
