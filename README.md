@@ -48,9 +48,8 @@ conda env create -f ./yml/intronomer.yml
 
 #### Containerization
 
-You may run `intronomer` from a container with Docker. You may set up a new image using either the provided Dockerfile or .
-
-To set up the containiner for the first time, navigate to the `intronomer` repo and run the following:
+You may run `intronomer` from a Docker container by setting up a new image using the provided Dockerfile. Do this by navigating to 
+the `intronomer` folder and run the following:
 
 ```
 docker build -t intronomer:latest .
