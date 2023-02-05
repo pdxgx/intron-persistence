@@ -49,7 +49,7 @@ conda env create -f ./yml/intronomer.yml
 #### Containerization
 
 You may run `intronomer` from a Docker container by setting up a new image using the provided Dockerfile. Do this by navigating to 
-the `intronomer` folder and run the following:
+the `intronomer` folder and running the following:
 
 ```
 docker build -t intronomer:latest .
@@ -64,13 +64,13 @@ REPOSITORY              TAG       IMAGE ID       CREATED         SIZE
 intronomer              latest    22b7effb653e   6 minutes ago   580MB
 ```
 
-Instead of activating a virtual environment or navigating to a new location, `intronomer` can be run from your current directory instead using:
+Instead of activating a virtual environment or navigating to a new location, `intronomer` can be run from your current directory instead using the following command (note, `sudo` may also be required):
 
 ```
 docker run -w $PWD -v $PWD:$PWD intronomer:latest -g ANNOTATION_FILE -a ALIGNED_READS_FILE -p PROJECT_FLAG -o OUTPUT_DIRECTORY -t PREPROCESSED_READ-TX_FILE
 ```
 
-This used the flags `-w` to specify the container working directory, `-v` to mount the local path so that it is visible to the container, and `--rm` to remove the container on exit, which is good practice. See `docker run --help` for details.
+This command used the flags `-w` to specify the container working directory, `-v` to mount the local path so that it is visible to the container, and `--rm` to remove the container on exit, which is good practice. See `docker run --help` for details.
 
 ### Runnable example
 
