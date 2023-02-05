@@ -48,8 +48,7 @@ conda env create -f ./yml/intronomer.yml
 
 #### Containerization
 
-You may run `intronomer` from a container with the supported Docker image. The Dockerfile is provided in the repo, or you may 
-choose to grab the image from Dockerhub. 
+You may run `intronomer` from a container with Docker. You may set up a new image using either the provided Dockerfile or .
 
 To set up the containiner for the first time, navigate to the `intronomer` repo and run the following:
 
@@ -71,6 +70,8 @@ Now, instead of navigating to a virtual environment or another directory, `intro
 ```
 docker run -w $PWD -v $PWD:$PWD intronomer:latest -g ANNOTATION_FILE -a ALIGNED_READS_FILE -p PROJECT_FLAG -o OUTPUT_DIRECTORY -t PREPROCESSED_READ-TX_FILE
 ```
+
+This used the flags `-w` to specify the container working directory, `-v` to mount the local path so that it is visible to the container, and `--rm` to remove the container on exit, which is good practice. See `docker run --help` for details.
 
 ### Runnable example
 
@@ -96,8 +97,6 @@ If you already set up the Docker image (see above), you can instead navigate to 
 ```
 docker run -w $PWD -v $PWD:$PWD --rm intronomer:latest -g 'gencode.v35.annotation.exe.gtf' -a 'exe.bam' -o 'example' -p 'new-example' -rm
 ```
-
-We used the flags `-w` to specify the container working directory, `-v` to mount the local path so that it is visible to the container, and `--rm` to remove the container on exit, which is good practice. See `docker run --help` for details.
 
 On run success, you should see a message summarizing the results:
 
