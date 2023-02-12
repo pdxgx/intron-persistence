@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# local directories
+ignore/
+conda/
+scripts/
+
+# R files
+.Rhistory
